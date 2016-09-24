@@ -122,19 +122,9 @@ slideImage.prototype = {
         var ul = document.createElement('ul');
         ul.classList.add('slideImage-Container');
 
-        var bg = this.currentIndex-1 < 0 ? 0 : this.currentIndex-1
-        var slices = this.images.slice(bg, this.currentIndex + 2);
-
-        var tmp = 3 - slices.length;
-        while(tmp > 0) {
-            var li = document.createElement('li');
-            li.classList.add('slideImage-Item')
-            ul.appendChild(li)
-            tmp--;
-        }
-
         var self = this;
-        slices.forEach(function (img, i) {
+        [this.images[this.currentIndex-1], this.images[this.currentIndex], this.images[this.currentIndex+1]]
+        .forEach(function (img, i) {
             ul.appendChild(self._makeItemDom(img));
         })
 
@@ -240,10 +230,10 @@ slideImage.prototype = {
             self.recoverImgSize();
 
             this._lock = setTimeout(function () {
-                self.onMoveEnded && self.onMoveEnded(e, isMovingLeft ? 'left' : 'right');
-
                 self.isMovingLeft() ? self.pushLeftMoveImage() : self.pushRightMoveImage();
                 self._reset();
+
+                self.onMoveEnded && self.onMoveEnded(e, isMovingLeft ? 'left' : 'right');
 
                 delete self._lock;
             }, time * 1000)
