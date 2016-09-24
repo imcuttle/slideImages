@@ -74,10 +74,10 @@ slideImage.prototype = {
 
         var gap = 20;
         var elWidth = this.el.clientWidth;
-        this._elemHide(this.prevSlideItem);
+        // this._elemHide(this.prevSlideItem);
         this._setElemTranslateX(this.prevSlideItem, -elWidth - gap)
         this.prevSlideItem.baseX = -elWidth - gap;
-        this._elemHide(this.nextSlideItem);
+        // this._elemHide(this.nextSlideItem);
         this._setElemTranslateX(this.nextSlideItem, elWidth + gap)
         this.nextSlideItem.baseX = elWidth + gap;
     },
@@ -124,9 +124,9 @@ slideImage.prototype = {
 
         var self = this;
         [this.images[this.currentIndex-1], this.images[this.currentIndex], this.images[this.currentIndex+1]]
-        .forEach(function (img, i) {
-            ul.appendChild(self._makeItemDom(img));
-        })
+            .forEach(function (img, i) {
+                ul.appendChild(self._makeItemDom(img));
+            })
 
         this.el.innerHTML = '';
         this.el.appendChild(ul);
@@ -173,6 +173,7 @@ slideImage.prototype = {
         var o = {}
         if(pos) {
             o = {transformOrigin: pos.x + 'px '+pos.y+'px'}
+            this.currSlideItem._scaleOrigin = pos;
         }
         this.currSlideItem._scale = scale;
         this._setElemStyle(this.currSlideItem.querySelector('div'), Object.assign({
@@ -227,6 +228,7 @@ slideImage.prototype = {
             this.setAllAnimationDuration(time);
             this.setAllTranslateX(isMovingLeft ? -clientWidth : clientWidth);
 
+            delete this.currSlideItem._scale;
             self.recoverImgSize();
 
             this._lock = setTimeout(function () {
@@ -276,16 +278,40 @@ slideImage.prototype = {
                 })
                 e.stopPropagation();
                 return;
+            } else {
+                if(this.currSlideItem._scale && this._start && this.currSlideItem._scaleOrigin && this.currSlideItem._scale>1.4) {
+                    var start = this._start || {}
+                    var startX = start.x || 0
+                    var startY = start.y || 0
+                    var baseOrigin = this.currSlideItem._scaleOrigin
+
+                    var deltaX = (e.touches[0].clientX-startX)
+                    var deltaY = (e.touches[0].clientY-startY)
+
+                    console.log(deltaX, deltaY)
+
+                    this.currSlideItem._tempOrigin = {x: (-deltaX+baseOrigin.x), y: (-deltaY+baseOrigin.y)}
+                    this._setElemStyle(this.currSlideItem.querySelector('div'), {
+                        transformOrigin: this.currSlideItem._tempOrigin.x + 'px ' + this.currSlideItem._tempOrigin.y + 'px'
+                    });
+                    e.stopPropagation();
+                }
             }
         }.bind(this), false)
         img.addEventListener('touchend', function (e) {
             // e.preventDefault();  //don't trigger click
+            if(this.currSlideItem._tempOrigin) {
+                this.currSlideItem._scaleOrigin = this.currSlideItem._tempOrigin;
+                delete this.currSlideItem._tempOrigin;
+                e.stopPropagation();
+            }
             if(this.currSlideItem._scale && this.currSlideItem._scale < 1) {
                 delete this.currSlideItem._scale;
                 this.recoverImgSize();
                 e.stopPropagation();
                 return;
             }
+
         }.bind(this), false)
     },
 
@@ -355,5 +381,5 @@ slideImage.prototype = {
 }
 
 if(typeof module != 'undefined' && module.exports) {
-    module.exports = slideImages
+    module.exports = slideImage
 }
