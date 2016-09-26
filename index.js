@@ -190,7 +190,7 @@ slideImage.prototype = {
     },
 
     setScale: function (scale, pos) {
-        var o = {}
+        var o = {}, p = {}
         if(pos) {
             o = {
                 transformOrigin: pos.x + 'px '+pos.y+'px',
@@ -198,11 +198,15 @@ slideImage.prototype = {
             }
             this.currSlideItem._scaleOrigin = pos;
         }
-        this.currSlideItem._scale = scale;
-        this._setElemStyle(this.currSlideItem.querySelector('div'), Object.assign({
-            webkitTransform: 'scale(' + scale + ')',
-            transform: 'scale(' + scale + ')'
-        }, o))
+        if(scale) {
+            scale = scale * (this.currSlideItem._preScale || 1);
+            p = {
+                webkitTransform: 'scale(' + scale + ')',
+                transform: 'scale(' + scale + ')'
+            }
+            this.currSlideItem._scale = scale;
+        }
+        this._setElemStyle(this.currSlideItem.querySelector('div'), Object.assign(p, o))
     },
 
     touchMove: function (e) {
@@ -230,6 +234,7 @@ slideImage.prototype = {
     recoverImgSize: function () {
         var div = this.currSlideItem.querySelector('div');
         //fix safari bug
+        delete this.currSlideItem._preScale
         this.setScale(1);
         // this._setElemStyle(this.currSlideItem.querySelector('div'),
         //     {
@@ -296,21 +301,44 @@ slideImage.prototype = {
         }.bind(this), false);
 
         img.addEventListener('touchmove', function(e) {
+            // this.currSlideItem._prevMoveStatus = e.touches.length
             if(e.touches.length > 1) {
+                delete this._start;
+
                 var dist = Math.sqrt(
                     Math.pow(e.touches[0].clientX - e.touches[1].clientX, 2) +
                     Math.pow(e.touches[0].clientY - e.touches[1].clientY, 2)
                 );
 
+                var x = (e.touches[0].clientX+e.touches[1].clientX)>>1;
+                var y = (e.touches[0].clientY+e.touches[1].clientY)>>1;
+                var scale = this.currSlideItem._scale;
+                var origin = this.currSlideItem._scaleOrigin;
+
+                // can optimized by matrix
+                if(!!origin && scale!=null && scale>1) {
+                    x = ((x-origin.x)/scale) + origin.x;
+                    y = ((y-origin.y)/scale) + origin.y;
+                    x = this.currSlideItem.clientWidth - x;
+                    y = this.currSlideItem.clientHeight - y;
+
+                    if(Math.abs(x-origin.x)<5) {
+                        x = origin.x
+                    }
+                    if(Math.abs(y-origin.y)<8) {
+                        y = origin.y
+                    }
+                }
+
                 this.setScale(dist/this._dist, {
-                    x: (e.touches[0].clientX+e.touches[1].clientX)>>1,
-                    y: (e.touches[0].clientY+e.touches[1].clientY)>>1// - rect.top
+                    x: x,
+                    y: y// - rect.top
                 })
                 e.stopPropagation();
                 return;
             } else {
                 if(this.currSlideItem._scale && this._start && this.currSlideItem._scaleOrigin && this.currSlideItem._scale>1.4) {
-                    var start = this._start || {}
+                    var start = this._start
                     var startX = start.x || 0
                     var startY = start.y || 0
                     var baseOrigin = this.currSlideItem._scaleOrigin
@@ -318,9 +346,10 @@ slideImage.prototype = {
                     var deltaX = (e.touches[0].clientX-startX)
                     var deltaY = (e.touches[0].clientY-startY)
 
-                    console.log(deltaX, deltaY)
+                    // console.log(deltaX, deltaY)
 
                     this.currSlideItem._tempOrigin = {x: (-deltaX+baseOrigin.x), y: (-deltaY+baseOrigin.y)}
+
                     this._setElemStyle(this.currSlideItem.querySelector('div'), {
                         transformOrigin: this.currSlideItem._tempOrigin.x + 'px ' + this.currSlideItem._tempOrigin.y + 'px',
                         webkitTransformOrigin: this.currSlideItem._tempOrigin.x + 'px ' + this.currSlideItem._tempOrigin.y + 'px'
@@ -341,6 +370,9 @@ slideImage.prototype = {
                 this.recoverImgSize();
                 e.stopPropagation();
                 return;
+            } else {
+                this.currSlideItem._preScale = this.currSlideItem._scale;
+                // delete this.currSlideItem._scale
             }
 
         }.bind(this), false)
