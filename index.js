@@ -319,8 +319,11 @@ slideImage.prototype = {
                 if(!!origin && scale!=null && scale>1) {
                     x = ((x-origin.x)/scale) + origin.x;
                     y = ((y-origin.y)/scale) + origin.y;
-                    x = this.currSlideItem.clientWidth - x;
-                    y = this.currSlideItem.clientHeight - y;
+
+                    x = ((x-origin.x)/scale) + origin.x;
+                    y = ((y-origin.y)/scale) + origin.y;
+                    // x = origin.x- x;
+                    // y = origin.y- y;
 
                     if(Math.abs(x-origin.x)<5) {
                         x = origin.x
