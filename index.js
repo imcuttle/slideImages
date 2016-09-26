@@ -22,6 +22,25 @@ function slideImage (options) {
 
     this._reset();
 }
+if(Object.assign == null) {
+    Object.assign = function (src) {
+        var others = [].slice.call(arguments, 1);
+        for(var i = 0; i < others.length; i++) {
+            var obj = others[i];
+            for(var k in obj) {
+                src[k] = obj[k];
+            }
+        }
+        return src;
+    }
+}
+if([].forEach == null) {
+    Array.prototype.forEach = function (fn) {
+        for(var i=0; i < this.length; i++) {
+            fn(this[i], i, this)
+        }
+    }
+}
 
 slideImage.prototype = {
 
@@ -61,13 +80,14 @@ slideImage.prototype = {
     _reset: function () {
         var self = this;
         var lis = this.el.querySelectorAll('li.slideImage-Item');
-        lis.forEach(function (ls, i) {
+        [].slice.call(lis).forEach(function (ls, i) {
             ls._image = self.images[self.currentIndex - 1 + i];
             delete ls._translateX
             delete ls.baseX
             ls.style.webkitTransform = ls.style.transform = ''
             ls.style.webkitTransition = ls.style.transition = ''
         });
+
         this.prevSlideItem = lis[0];
         this.currSlideItem = lis[1];
         this.nextSlideItem = lis[2];
@@ -128,7 +148,7 @@ slideImage.prototype = {
                 ul.appendChild(self._makeItemDom(img));
             })
 
-        this.el.innerHTML = '';
+        // this.el.innerHTML = '';
         this.el.appendChild(ul);
 
     },
@@ -172,11 +192,15 @@ slideImage.prototype = {
     setScale: function (scale, pos) {
         var o = {}
         if(pos) {
-            o = {transformOrigin: pos.x + 'px '+pos.y+'px'}
+            o = {
+                transformOrigin: pos.x + 'px '+pos.y+'px',
+                webkitTransformOrigin: pos.x + 'px '+pos.y+'px'
+            }
             this.currSlideItem._scaleOrigin = pos;
         }
         this.currSlideItem._scale = scale;
         this._setElemStyle(this.currSlideItem.querySelector('div'), Object.assign({
+            webkitTransform: 'scale(' + scale + ')',
             transform: 'scale(' + scale + ')'
         }, o))
     },
@@ -205,7 +229,10 @@ slideImage.prototype = {
 
     recoverImgSize: function () {
         this._setElemStyle(this.currSlideItem.querySelector('div'),
-            { transform: '', transformOrigin: ''}
+            {
+                transform: '', transformOrigin: '',
+                webkitTransform: '', webkitTransformOrigin: ''
+            }
         )
     },
 
@@ -228,10 +255,10 @@ slideImage.prototype = {
             this.setAllAnimationDuration(time);
             this.setAllTranslateX(isMovingLeft ? -clientWidth : clientWidth);
 
-            delete this.currSlideItem._scale;
-            self.recoverImgSize();
-
             this._lock = setTimeout(function () {
+                delete self.currSlideItem._scale;
+                self.recoverImgSize();
+
                 self.isMovingLeft() ? self.pushLeftMoveImage() : self.pushRightMoveImage();
                 self._reset();
 
@@ -292,7 +319,8 @@ slideImage.prototype = {
 
                     this.currSlideItem._tempOrigin = {x: (-deltaX+baseOrigin.x), y: (-deltaY+baseOrigin.y)}
                     this._setElemStyle(this.currSlideItem.querySelector('div'), {
-                        transformOrigin: this.currSlideItem._tempOrigin.x + 'px ' + this.currSlideItem._tempOrigin.y + 'px'
+                        transformOrigin: this.currSlideItem._tempOrigin.x + 'px ' + this.currSlideItem._tempOrigin.y + 'px',
+                        webkitTransformOrigin: this.currSlideItem._tempOrigin.x + 'px ' + this.currSlideItem._tempOrigin.y + 'px'
                     });
                     e.stopPropagation();
                 }
