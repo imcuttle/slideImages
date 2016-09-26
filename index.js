@@ -115,8 +115,8 @@ slideImage.prototype = {
             if(url === img.thumbUrl) {
                 var realImage = new Image();
                 realImage.src = img.realUrl;
-                realImage.onload = function (e) {
-                    imgDom.src = img.realUrl
+                realImage.onload = realImage.onerror = function (e) {
+                    imgDom.src = img.realUrl;
                 }
             }
             return imgDom;
@@ -228,12 +228,15 @@ slideImage.prototype = {
     },
 
     recoverImgSize: function () {
-        this._setElemStyle(this.currSlideItem.querySelector('div'),
-            {
-                transform: '', transformOrigin: '',
-                webkitTransform: '', webkitTransformOrigin: ''
-            }
-        )
+        var div = this.currSlideItem.querySelector('div');
+        //fix safari bug
+        this.setScale(1);
+        // this._setElemStyle(this.currSlideItem.querySelector('div'),
+        //     {
+        //         transform: '', transformOrigin: '',
+        //         webkitTransform: '', webkitTransformOrigin: ''
+        //     }
+        // )
     },
 
     touchEnd: function (e) {
